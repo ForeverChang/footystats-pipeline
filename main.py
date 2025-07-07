@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from playwright.sync_api import sync_playwright
-import os
+import json
 
 app = FastAPI()
 
@@ -12,14 +12,14 @@ def root():
 def download_matches():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context()
 
-        # Login
-        page.goto("https://footystats.org/login")
-        page.fill("#username", os.getenv("FOOTYSTATS_USER"))
-        page.fill("#password", os.getenv("FOOTYSTATS_PASS"))
-        page.click("#register_submit")
-        page.wait_for_timeout(5000)
+        # ✅ Load cookies instead of login
+        with open("cookies.json", "r") as f:
+            cookies = json.load(f)
+        context.add_cookies(cookies)
+
+        page = context.new_page()
 
         # Download today
         page.goto("https://footystats.org/")
